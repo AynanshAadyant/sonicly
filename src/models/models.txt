@@ -1,0 +1,5 @@
+models required : 
+
+user : user logs in to listen to music 
+song : song which user listens 
+playlist : made up of songs 
