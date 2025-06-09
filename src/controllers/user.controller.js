@@ -7,19 +7,19 @@ const createUser = async( req, res ) => {
     const { name, email, password } = req.body;
 
     if( !name || !email || !password ) {
-        return res.status( 202 ).json( {
+        return res.status( 400 ).json( {
             success: false,
-            status: 202,
+            status: 400,
             message: "Please enter all fields"
         })
     }
 
-    const findUser = await User.find( {email: email } );
+    const findUser = await User.findOne( {email: email } );
 
     if( findUser ) {
-        return res.status( 202 ).json( {
+        return res.status( 400 ).json( {
             success: false,
-            status: 202,
+            status: 400,
             message: "Duplicate user present"
         })
     }
@@ -40,20 +40,11 @@ const createUser = async( req, res ) => {
         })
     }
 
-    const verifyUser = await User.findById( user._id );
-    if( !verifyUser ) {
-        return res.status( 400 ).json( {
-            status: 400,
-            success: false,
-            message: "User data not saved in DB"
-        })
-    }
-
     console.log( "User Signed In successfully" );
 
-    return res.status( 200 ).json( {
+    return res.status( 201 ).json( {
         success: true,
-        status: 200,
+        status: 201,
         message: "Sign in successful"
     })
 }
@@ -65,14 +56,14 @@ const loginUser = async( req, res ) => {
     const { email, password } = req.body;
 
     if( !email || !password ) {
-        return res.status( 202 ).json( {
+        return res.status( 400 ).json( {
             success: false,
-            status: 202,
+            status: 400,
             message: "Enter all details"
         })
     }
 
-    const user = await User.find( {email : email } );
+    const user = await User.findOne( {email : email } );
 
     if( !user ) {
         return res.status( 400 ).json( {
@@ -91,7 +82,10 @@ const loginUser = async( req, res ) => {
         })
     }
 
-    const accessToken = await generateAccessToken( user.select( "-password"  ) );
+    const userObject = user.toObject();
+    delete userObject.password;
+
+    const accessToken = await generateAccessToken( userObject );
 
     if( !accessToken ) {
         return res.status( 400 ).json( {
@@ -103,7 +97,7 @@ const loginUser = async( req, res ) => {
 
     const cookieOptions = {
         httpOnly: true,
-        secure: false,
+        secure: process.env.status==='production',
         sameSite: 'lax'
     }
 
@@ -135,7 +129,7 @@ const logOut = async( req, res ) => {
     console.log( "USER logging out" );
     res.clearCookie( "ACCESS_TOKEN", {
         httpOnly: true,
-        secure: false,
+        secure: process.env.STATUS==='production',
         sameSite: 'lax'
     })
 

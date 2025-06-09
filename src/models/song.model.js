@@ -13,14 +13,13 @@ const SongSchema = new mongoose.Schema( {
     },
     genre: {
         type: String, 
-        required: false,
         trim: true
     },
     duration: { //in seconds
         type: Number,
         required: true,
     },
-    fileUrl: {
+    songUrl: {
         type: String,
         required: true
     },
