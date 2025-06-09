@@ -1,3 +1,4 @@
+import { Playlist } from "../models/playlist.model.js";
 import {Song} from "../models/song.model.js";
 import { uploadSong, uploadCover } from "../utils/cloudinary.js";
 import { cloudinary } from "../utils/cloudinary.js";
@@ -59,7 +60,7 @@ const createSong = async( req, res ) => {
         artist, 
         genre: genre || "",
         duration,
-        fileUrl,
+        fileUrl: songUrl,
         coverUrl,
         owner
     }
@@ -116,6 +117,55 @@ const getSong = async( req, res ) => {
     })
 }
 
+const addToPlaylist = async( req, res ) => {
+    const { playlistId } = req.body;
+    const { songId } = req.params;
+    const user = req.user;
+
+    if( !playlistId ) {
+        return res.status( 400 ).json( {
+            success: false,
+            status: 400,
+            message: "Playlist Id requried"
+        })
+    }
+
+    const playlist = await Playlist.findById( playlistId );
+    if( !playlist ) {
+        return res.status( 404 ).json( {
+            success: false,
+            status: 404,
+            message: "Playlist not found"
+        })
+    }
+
+    const song = await Song.findById( songId );
+    if( !song ) {
+        return res.status( 404 ).json( {
+            success: false,
+            status: 404,
+            message: "Song does not exits"
+        })
+    }
+
+    if( playlist.songs.includes( songId ) ) {
+        return res.status( 409 ).json( {
+            success: false,
+            status: 409,
+            message: "Song already added"
+        })
+    }
+
+    playlist.songs.push( songId );
+    await playlist.save();
+
+    return res.status( 200 ).json( {
+        success: true,
+        status: 200,
+        message: "Song added successfully"
+    })
+}
+
 const deleteSong = async( req, res ) => {
     const songId = req.params.id;
     if( !songId ) {
@@ -145,3 +195,5 @@ const deleteSong = async( req, res ) => {
         message: "Song deleted successfully"
     })
 }
+
+export { createSong, addToPlaylist, getAllSongs, getSong, deleteSong}

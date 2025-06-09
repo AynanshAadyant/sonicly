@@ -29,20 +29,20 @@ const createPlaylist = async( req, res ) => {
     })
 }
 
-const addToPlaylist = async( req, res ) => {
-    const { name } = req.body;
-    const song = req.params.song;
+const addInPlaylist = async( req, res ) => {
+    const { song } = req.body;
+    const playlistId = req.params.playlist;
     const user = req.user;
 
     const playlist = await Playlist.findOne( {
-        name: name,
-        createdBy: user._id
-    })
+        _id: playlistId,
+        createdBy: user
+    } );
 
     if( !playlist ) {
-        return res.status(400 ).json( {
+        return res.status(404 ).json( {
             success: false,
-            status: 400,
+            status: 404,
             message: "Playlist not found"
         })
     }
@@ -67,3 +67,66 @@ const addToPlaylist = async( req, res ) => {
         message: "Playlist updated successfullu"
     })
 }
+
+const getAllPlaylist = async( req, res ) => {
+    const user = req.user;
+    const playlists = await Playlist.find( { createdBy: user._id } );
+
+    if( playlists.length === 0 ) {
+        return res.status( 200 ).json( {
+            success: true,
+            status: 200,
+            message: "No playlist created so far"
+        })
+    }
+
+    return res.status( 200 ).json( {
+        success: true,
+        status: 200,
+        body: playlists
+    })
+}
+
+const getPlaylist = async( req,res ) => {
+    const user = req.user;
+    const playlistId = req.params.playlistId;
+
+    const playlist = await Playlist.findById( playlistId );
+
+    if( !playlist ) {
+        return res.status( 404 ).json( {
+            success: false,
+            status: 404,
+            message: "Playlist not found"
+        })
+    }
+
+    return res.status( 200 ).json( {
+        success: true,
+        status: 200,
+        body: playlist
+    })
+}
+
+const deletePlaylist = async( req, res ) => {
+    const playlistId = req.params.playlistId;
+
+    const playlist = await Playlist.findById( playlistId );
+    if( !playlist ) {
+        return res.status( 404 ).json( {
+            success: false,
+            status: 404,
+            message: "Playlist not found"
+        })
+    }
+
+    await playlist.remove();
+
+    return res.status( 200 ).json( {
+        success: true,
+        status: 200,
+        message: "Playlist deleted successfully"
+    })
+}
+
+export {createPlaylist, addInPlaylist, getAllPlaylist, getPlaylist, deletePlaylist }

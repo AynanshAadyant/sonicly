@@ -139,3 +139,5 @@ const logOut = async( req, res ) => {
         message: "User logged out successfully"
     })
 }
+
+export {createUser, loginUser, getUser, logOut };
