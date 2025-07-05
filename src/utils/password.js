@@ -6,7 +6,7 @@ const hashPassword = async ( password ) => {
 }
 
 const verifyPassword = async( password, hash ) => {
-    return await bcrypt.verify( password, hash );
+    return await bcrypt.compare( password, hash );
 }
 
 export {hashPassword, verifyPassword };

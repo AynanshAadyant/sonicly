@@ -9,7 +9,7 @@ const PlaylistSchema = new mongoose.Schema( {
     createdBy : {
         type: mongoose.Types.ObjectId,
         ref: "User",
-        required: true
+        required: false
     },
     songs : [ {
         type: mongoose.Types.ObjectId,

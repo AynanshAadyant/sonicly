@@ -4,6 +4,7 @@ import { uploadSong, uploadCover } from "../utils/cloudinary.js";
 import { cloudinary } from "../utils/cloudinary.js";
 
 const createSong = async( req, res ) => {
+    console.log( "Uploading song started" );
     const { title, artist, genre, duration } = req.body;
     const owner = req.user;
 
@@ -19,16 +20,10 @@ const createSong = async( req, res ) => {
             status: 202,
             message: "Artist missing"
         })
-    if( !duration ) 
-        return res.status( 202 ).json( {
-            success: false,
-            status: 202,
-            message: "Duration missing"
-        })
 
     const songLocal = req.files?.song[0];
     const coverLocal = req?.files?.cover[0] || '../public/cover.jpeg';
-
+    console.log( songLocal );
     if( !songLocal ) {
         return res.status( 400 ).json( {
             success: false,
@@ -37,7 +32,7 @@ const createSong = async( req, res ) => {
         })
     }
 
-    const songUrl = await uploadSong( songLocal );
+    const songUrl = await uploadSong( songLocal.path );
 
     if( !songUrl ) {
         return res.status( 400 ).json( {
@@ -46,7 +41,7 @@ const createSong = async( req, res ) => {
             message: "Error in uploaded song to cloudinary"
         })
     }
-    const coverUrl = await uploadCover( coverLocal );
+    const coverUrl = await uploadCover( coverLocal.path );
     if( !coverUrl ) {
         return res.status( 400 ).json( {
             success: false,
@@ -54,30 +49,30 @@ const createSong = async( req, res ) => {
             message: "Error in uploaded cover to cloudinary"
         })
     }
-
+    console.log( "Song uploaded to cloudinary" );
     const song = await Song.create( {
         title,
         artist, 
-        genre: genre || "",
-        duration,
-        fileUrl: songUrl,
-        coverUrl,
+        genre: genre || [""],
+        duration: duration || 0 ,
+        songUrl: songUrl.url,
+        coverUrl: coverUrl.url,
         owner
-    }
-    )
-
+    })
+    
     return res.status( 200 ).json( {
         success: true,
         status: 200,
-        message: "Song uploaded successfully"
+        message: "Song uploaded successfully",
+        body: song
     })
 }
 
 const getAllSongs = async( req, res ) => {
-    const songs = await Song.find().sort( { createdAt: -1 } );
+    const songs = await Song.find();
     if( songs.length === 0 ) {
         return res.status( 200 ).json( {
-            success: true,
+            success: false,
             status: 200,
             message: "No Songs uploaded yet",
             body: []
@@ -92,7 +87,8 @@ const getAllSongs = async( req, res ) => {
 }
 
 const getSong = async( req, res ) => {
-    const songId = req.params.id;
+    const { songId } = req.params;
+    console.log( "Fetching song:", songId );
     if( !songId ) {
         return res.status( 400 ).json( {
             success: false,
@@ -102,6 +98,7 @@ const getSong = async( req, res ) => {
     }
 
     const song = await Song.findById( songId );
+    
     if( !song ) {
         return res.status( 404 ).json( {
             success: false,
@@ -109,6 +106,9 @@ const getSong = async( req, res ) => {
             message: "Song not found"
         })
     }
+
+    song.timesPlayed = song.timesPlayed + 1;
+    await song.save();
 
     return res.status( 200 ).json( {
         success: true,

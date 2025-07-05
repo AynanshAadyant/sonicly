@@ -6,15 +6,15 @@ const SongSchema = new mongoose.Schema( {
         required: true,
         trim: true
     },
-    artist: {
+    artist:[ {
         type: String,
         required: true,
         trim: true
-    },
-    genre: {
+    }],
+    genre: [{
         type: String, 
         trim: true
-    },
+    }],
     duration: { //in seconds
         type: Number,
         required: true,
@@ -29,6 +29,10 @@ const SongSchema = new mongoose.Schema( {
     owner: {
         type: mongoose.Schema.ObjectId,
         ref: "User"
+    },
+    timesPlayed : {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true

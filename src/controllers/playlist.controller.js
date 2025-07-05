@@ -1,4 +1,5 @@
 import { Playlist } from "../models/playlist.model.js";
+import { User } from "../models/user.model.js";
 
 const createPlaylist = async( req, res ) => {
     const { name, songId, isPublic = true } = req.body;
@@ -21,6 +22,10 @@ const createPlaylist = async( req, res ) => {
         songs: songArray,
         isPublic
     }) 
+
+    const user = await User.findById( owner._id );
+    user.playlists.push( playlist );
+    await user.save();
 
     return res.status( 201 ).json( {
         success: true,
@@ -68,14 +73,46 @@ const addInPlaylist = async( req, res ) => {
     })
 }
 
-const getAllPlaylist = async( req, res ) => {
+const playlistBulkAdd = async( req, res ) => {
+    const { name, songs, isPublic } = req.body; //name -> playlist name, songs->array of songs
     const user = req.user;
-    const playlists = await Playlist.find( { createdBy: user._id } );
+
+    if( !name || !songs ) {
+        return res.status( 400 ).json( {
+            success: false,
+            message: "Enter all details",
+            status: 400
+        })
+    }
+
+    const playlist = await Playlist.create( {
+        name,
+        songs, 
+        createdBy : user._id,
+        isPublic
+    })
+
+    const changeUser = await User.findById( user._id );
+    changeUser.playlist.push( playlist );
+    await changeUser.save();
+
+    return res.status( 200 ).json( {
+        success: true,
+        status: 200,
+        message: "Playlist created successfully"
+    })
+}
+
+const getAllPlaylist = async( req, res ) => {
+    
+
+    const playlists = await Playlist.find( );
 
     if( playlists.length === 0 ) {
         return res.status( 200 ).json( {
-            success: true,
+            success: false,
             status: 200,
+            playlistPresent: false,
             message: "No playlist created so far"
         })
     }
@@ -83,14 +120,16 @@ const getAllPlaylist = async( req, res ) => {
     return res.status( 200 ).json( {
         success: true,
         status: 200,
+        playlistPresent: true,
         body: playlists
     })
 }
 
 const getPlaylist = async( req,res ) => {
-    const user = req.user;
-    const playlistId = req.params.playlistId;
+    console.log( "Fetching playlist " );
+    const {playlistId} = req.params;
 
+    console.log( "Playlist id : ", playlistId );
     const playlist = await Playlist.findById( playlistId );
 
     if( !playlist ) {
@@ -129,4 +168,19 @@ const deletePlaylist = async( req, res ) => {
     })
 }
 
-export {createPlaylist, addInPlaylist, getAllPlaylist, getPlaylist, deletePlaylist }
+//default playlists made in application based on various factors - currently genre
+
+const genrePlaylist = async( req, res ) => {
+    const { genre } = req.params;
+    
+    if( !genre ) { 
+        return res.status( 404 ).json( {
+            success : false,
+            status: 404,
+            message: "No genre received"
+        })
+    }
+
+}
+
+export {createPlaylist, addInPlaylist, playlistBulkAdd, getAllPlaylist, getPlaylist, deletePlaylist }

@@ -1,9 +1,11 @@
 import { User } from "../models/user.model.js"
 import {hashPassword, verifyPassword} from "../utils/password.js";
 import { generateAccessToken } from "../utils/generateToken.js";
+import { uploadCover } from "../utils/cloudinary.js";
 
 const createUser = async( req, res ) => {
     console.log( "User Signing Up");
+    
     const { name, email, password } = req.body;
 
     if( !name || !email || !password ) {
@@ -14,6 +16,20 @@ const createUser = async( req, res ) => {
         })
     }
 
+    // const profileLocal = req?.files?.profilePic?.[0];
+
+    // let profilePic = null;
+    // if( profileLocal ) {
+    //     profilePic = await uploadCover( profileLocal.path );
+    //     if( !profilePic ) {
+    //         return res.status( 500 ).json( {
+    //             success: false,
+    //             status: 500,
+    //             message: "Error in uploading Profile Pic"
+    //         })
+    //     }
+    // }
+
     const findUser = await User.findOne( {email: email } );
 
     if( findUser ) {
@@ -23,13 +39,18 @@ const createUser = async( req, res ) => {
             message: "Duplicate user present"
         })
     }
+    let role = "user";
+    if( email === process.env.ADMIN ) {
+        role = "admin";
+    }
 
     const hash = await hashPassword( password );
 
     const user = await User.create( {
         name, 
         email,
-        password: hash
+        password: hash,
+        role: role
     })
 
     if( !user ) {
@@ -64,20 +85,19 @@ const loginUser = async( req, res ) => {
     }
 
     const user = await User.findOne( {email : email } );
-
     if( !user ) {
         return res.status( 400 ).json( {
             success: false,
             status: 400,
-            message: "Invalid user"
+            message: "Account not found"
         })
     }
 
     if( ! await verifyPassword( password, user.password ) )
     {
-        return res.status( 202 ).json( {
+        return res.status( 500 ).json( {
             success: false,
-            status: 202,
+            status: 500,
             message: "Wrong password"
         })
     }
@@ -97,7 +117,7 @@ const loginUser = async( req, res ) => {
 
     const cookieOptions = {
         httpOnly: true,
-        secure: process.env.status==='production',
+        secure: process.env.STATUS==='production',
         sameSite: 'lax'
     }
 
@@ -108,7 +128,8 @@ const loginUser = async( req, res ) => {
     .json( {
         success: true,
         status: 200,
-        message: "Login successful"
+        isAdmin: user.role=="admin",
+        message: user.role=="admin" ? "Admin Login successful" : "Login successful"
     })
 
 }
